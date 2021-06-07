@@ -1,5 +1,5 @@
 void sensor() {
-  //  kiri
+  //  kiri--------------------------------
   digitalWrite(trigL, LOW);
   delay(100);
 
@@ -14,7 +14,7 @@ void sensor() {
   Serial.println(distanceL);
   //  delay(300);
 
-  //  tengah
+  //  tengah-------------------------------
   digitalWrite(trigC, LOW);
   delay(100);
 
@@ -29,7 +29,7 @@ void sensor() {
   Serial.println(distanceC);
   //  delay(300);
 
-  // kanan
+  // kanan--------------------------------
   digitalWrite(trigR, LOW);
   delay(100);
 
@@ -44,13 +44,13 @@ void sensor() {
   Serial.println(distanceR);
   //  delay(300);
 
-  //  rata-rata
+  //  rata-rata----------------------------------
   avg = (distanceL + distanceC + distanceR) / 3;
   Serial.print("Rata-rata: ");
   Serial.println(avg);
   //}
 
-
+  // gas metana----------------------------------
   //float getMethanePPM() {
   a0 = analogRead(A0); // get raw reading from sensor
   v_o = a0 * 5 / 1023; // convert reading to volts
@@ -58,5 +58,5 @@ void sensor() {
   PPM = pow(R_S / R_0, -2.95) * 1000; //apply formula for getting PPM
   Serial.print("PPM : ");
   Serial.println(PPM);
-//  return PPM; // return PPM value to calling function
+  //  return PPM; // return PPM value to calling function
 }
