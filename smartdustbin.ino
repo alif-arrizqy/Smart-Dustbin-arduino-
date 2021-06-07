@@ -1,3 +1,18 @@
+//#include <WiFi.h>
+//#include <WiFiClient.h>
+//#include <WiFiServer.h>
+
+//Konfigurasi WiFi
+//const char *ssid = "GalaxyA50s";
+//const char *password = "galaxya50s";
+
+//IP Address Server yang terpasang XAMPP
+//const char *host = "projectsuizen.com";
+
+//unsigned long lastmillis = millis();
+
+
+/////////////////////////// ULTRASONIK ///////////////////////////
 //kiri
 const int trigL = D0; //d1
 const int echoL = D1; //d0
@@ -13,7 +28,8 @@ int distanceL, distanceC, distanceR;
 float avg;
 String result;
 
-//MQ-4
+
+/////////////////////////// MQ-4 ///////////////////////////
 const byte MQ4_Pin = A0; //MQ4 A0 pin
 const int R_0 = 945; //Change this to your own R0 measurements
 float a0;
@@ -43,8 +59,28 @@ FuzzySet *aman1           = new FuzzySet(50, 55, 60, 60);
 FuzzySet *warning         = new FuzzySet(30, 35, 40, 50);
 FuzzySet *penuh1          = new FuzzySet(15, 20, 25, 30);
 
+int value = 0;
 void setup() {
   // put your setup code here, to run once:
+  ////////////////////////////////// CEK KONEKSI /////////////////////////
+//  WiFi.mode(WIFI_STA);
+//  WiFi.begin(ssid, password);
+//  Serial.println("");
+
+//  Serial.print("Connecting");
+//  while (WiFi.status() != WL_CONNECTED) {
+//    delay(500);
+//    Serial.print(".");
+//  }
+
+  //Jika koneksi berhasil, maka akan muncul address di serial monitor
+//  Serial.println("");
+//  Serial.print("Connected to ");
+//  Serial.println(ssid);
+//  Serial.print("IP address: ");
+//  Serial.println(WiFi.localIP());
+
+
   pinMode(trigL, OUTPUT);
   pinMode(trigC, OUTPUT);
   pinMode(trigR, OUTPUT);
@@ -257,5 +293,9 @@ void loop() {
   sensor();
   fuzzy_logic();
   delay(500);
+  //  webserver();
   //  Serial.println(getMethanePPM());
+
+
+
 }
