@@ -1,27 +1,31 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <Fuzzy.h>
 //#include <WiFi.h>
 //#include <WiFiClient.h>
 //#include <WiFiServer.h>
 
+
 //Konfigurasi WiFi
-//const char *ssid = "GalaxyA50s";
-//const char *password = "galaxya50s";
+const char *ssid = "GalaxyA50s";
+const char *password = "galaxya50s";
 
 //IP Address Server yang terpasang XAMPP
-//const char *host = "projectsuizen.com";
+const char *host = "projectsuizen.com";
 
-//unsigned long lastmillis = millis();
+unsigned long lastmillis = millis();
 
 
 /////////////////////////// ULTRASONIK ///////////////////////////
 //kiri
-const int trigL = D0; //d1
-const int echoL = D1; //d0
+const int trigL = D1; //d1 34
+const int echoL = D0; //d0 35
 //tengah
-const int trigC = D2;//d3
-const int echoC = D3; //d2
+const int trigC = D3;//d3 32
+const int echoC = D2; //d2 33
 //kanan
-const int trigR = D4; //d5
-const int echoR = D5; //d4
+const int trigR = D5; //d5 14
+const int echoR = D4; //d4 12
 
 long duration;
 int distanceL, distanceC, distanceR;
@@ -30,7 +34,7 @@ String result;
 
 
 /////////////////////////// MQ-4 ///////////////////////////
-const byte MQ4_Pin = A0; //MQ4 A0 pin
+const byte MQ4_Pin = 25; //MQ4 A0 pin
 const int R_0 = 945; //Change this to your own R0 measurements
 float a0;
 float v_o;
@@ -38,7 +42,6 @@ float R_S;
 float PPM;
 
 //Fuzzy
-#include <Fuzzy.h>
 Fuzzy *fuzzy = new Fuzzy();
 
 // FuzzyInput ultrasonik
@@ -59,27 +62,27 @@ FuzzySet *aman1           = new FuzzySet(50, 55, 60, 60);
 FuzzySet *warning         = new FuzzySet(30, 35, 40, 50);
 FuzzySet *penuh1          = new FuzzySet(15, 20, 25, 30);
 
-int value = 0;
 void setup() {
   // put your setup code here, to run once:
+  Serial.begin(9600);
+
   ////////////////////////////////// CEK KONEKSI /////////////////////////
-//  WiFi.mode(WIFI_STA);
-//  WiFi.begin(ssid, password);
-//  Serial.println("");
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.println("");
 
-//  Serial.print("Connecting");
-//  while (WiFi.status() != WL_CONNECTED) {
-//    delay(500);
-//    Serial.print(".");
-//  }
+  Serial.print("Connecting");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
 
-  //Jika koneksi berhasil, maka akan muncul address di serial monitor
-//  Serial.println("");
-//  Serial.print("Connected to ");
-//  Serial.println(ssid);
-//  Serial.print("IP address: ");
-//  Serial.println(WiFi.localIP());
-
+  // Jika koneksi berhasil, maka akan muncul address di serial monitor
+  Serial.println("");
+  Serial.print("Connected to ");
+  Serial.println(ssid);
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
 
   pinMode(trigL, OUTPUT);
   pinMode(trigC, OUTPUT);
@@ -87,7 +90,6 @@ void setup() {
   pinMode(echoL, INPUT);
   pinMode(echoC, INPUT);
   pinMode(echoR, INPUT);
-  Serial.begin(9600);
 
   //Fuzzy Input dan Output
   //--------------------------------------
@@ -288,14 +290,169 @@ void setup() {
   //--------------------------------------
 }
 
+int value = 0;
 void loop() {
   // put your main code here, to run repeatedly:
-  sensor();
-  fuzzy_logic();
-  delay(500);
-  //  webserver();
-  //  Serial.println(getMethanePPM());
 
+
+  // Proses Pengiriman -----------------------------------------------------------
+  delay(100);
+  ++value;
+
+
+  // Membaca Sensor --------------------------------------------------------------
+  Serial.println("connecting to server");
+  Serial.println(host);
+
+  //  kiri--------------------------------
+  digitalWrite(trigL, LOW);
+  delay(100);
+
+  digitalWrite(trigL, HIGH);
+  delay(100);
+  digitalWrite(trigL, LOW);
+
+  duration = pulseIn(echoL, HIGH);
+
+  distanceL = duration * 0.034 / 2;
+  //  Serial.print("Kiri: ");
+  //  Serial.println(distanceL);
+  //  delay(300);
+
+  //  tengah-------------------------------
+  digitalWrite(trigC, LOW);
+  delay(100);
+
+  digitalWrite(trigC, HIGH);
+  delay(100);
+  digitalWrite(trigC, LOW);
+
+  duration = pulseIn(echoC, HIGH);
+
+  distanceC = duration * 0.034 / 2;
+  //  Serial.print("Tengah: ");
+  //  Serial.println(distanceC);
+  //    delay(300);
+
+  // kanan--------------------------------
+  digitalWrite(trigR, LOW);
+  delay(100);
+
+  digitalWrite(trigR, HIGH);
+  delay(100);
+  digitalWrite(trigR, LOW);
+
+  duration = pulseIn(echoR, HIGH);
+
+  distanceR = duration * 0.034 / 2;
+  //  Serial.print("Kanan: ");
+  //  Serial.println(distanceR);
+  //  delay(300);
+
+  //  rata-rata----------------------------------
+  avg = (distanceL + distanceC + distanceR) / 3;
+  //  Serial.print("Rata-rata: ");
+  //  Serial.println(avg);
+  //}
+
+  // gas metana----------------------------------
+  //float getMethanePPM() {
+  a0 = analogRead(A0); // get raw reading from sensor
+  v_o = a0 * 5 / 1023; // convert reading to volts
+  R_S = (5 - v_o) * 1000 / v_o; // apply formula for getting RS
+  PPM = pow(R_S / R_0, -2.95) * 1000; //apply formula for getting PPM
+  //  Serial.print("PPM : ");
+  //  Serial.println(PPM);
+  //  return PPM; // return PPM value to calling function
+
+  // Proses Fuzzy ----------------------------------
+
+  int in_ultra = avg;
+  int in_mq = PPM;
+
+  //--------------------------------------
+
+  fuzzy->setInput(1, in_ultra);
+  fuzzy->setInput(2, in_mq);
+  fuzzy->fuzzify();
+
+
+  int output = fuzzy->defuzzify(1);
+
+  //--------------------------------------
+
+  //  Serial.print("pot1    ");
+  //  Serial.print(in_ultra);  Serial.println("  bit");
+  //  Serial.print("pot2    ");
+  //  Serial.print(in_mq);  Serial.println("  bit");
+
+  //---------------------
+
+  Serial.print(in_ultra);   Serial.print(" ");
+  Serial.println(in_mq);
+
+  Serial.print("output: ");
+  Serial.println(output);
+  Serial.println("--------------");
+
+  if (output >= 63) {
+    result = "sangataman"; //sangatamat
+    //    Serial.println("Kosong");
+  } else if (output >= 50 && output <= 62) {
+    result = "aman1"; //aman1
+    //    Serial.println("Terisi");
+  } else if (output >= 30 && output <= 49) {
+    result = "warning"; //warning
+    //    Serial.println("Penuh");
+  } else if (output >= 0 && output <= 29) {
+    result = "penuh1"; //penuh1
+    //    Serial.println("Sangat Penuh");
+  }
+
+
+  // Mengirimkan ke alamat host dengan port 80 ------------------------------------
+  WiFiClient client;
+  const int httpPort = 80;
+  if (!client.connect(host, httpPort)) {
+    Serial.println("connection failed");
+    return;
+  }
+
+  // Isi Konten yang dikirim adalah alamat ip si esp -----------------------------
+  //  ------------------ hosting
+  String url = "/smartdustbin/Main/save_sampah_organik/";
+  //  ------------------ local
+  // String url = "/dustbin-project/Main/save_sampah_organik/";
+  url += avg;
+  url += "/";
+  url += PPM;
+  url += "/";
+  url += result;
+  Serial.print("Requesting URL: ");
+  Serial.println(url);
+
+  // Mengirimkan Request ke Server -----------------------------------------------
+  client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+               "Host: " + host + "\r\n" +
+               "Connection: close\r\n\r\n");
+  unsigned long timeout = millis();
+  while (client.available() == 0) {
+    if (millis() - timeout > 1000) {
+      Serial.println(">>> Client Timeout !");
+      client.stop();
+      return;
+    }
+  }
+
+
+  // Read all the lines of the reply from server and print them to Serial
+  while (client.available()) {
+    String line = client.readStringUntil('\r');
+    Serial.print(line);
+  }
+
+  Serial.println();
+  Serial.println("closing connection");
 
 
 }

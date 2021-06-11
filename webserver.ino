@@ -3,12 +3,12 @@
 //  delay(100);
 //  ++value;
 //
-//  
+//
 //  // Membaca Sensor --------------------------------------------------------------
 //  sensor();
 //  fuzzy_logic();
 //
-//  
+//
 //  // Mengirimkan ke alamat host dengan port 80 ------------------------------------
 //  WiFiClient client;
 //  const int httpPort = 80;
